@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Kamstein Files</title>
+    <link rel="icon" id="favicon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📁</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #e8e8e8;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        /* Login Screen */
+        .login-screen {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #d4d4d4 0%, #f0f0f0 100%);
+        }
+
+        .file-folder {
+            text-align: center;
+            animation: fadeIn 1.5s ease-in;
+            background: #fff;
+            padding: 60px 80px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            border: 3px solid #666;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .file-folder h1 {
+            font-size: 3.5em;
+            color: #000;
+            margin-bottom: 10px;
+            font-family: 'Permanent Marker', cursive;
+            position: relative;
+        }
+
+        .marker-text {
+            display: inline-block;
+            background: linear-gradient(180deg, transparent 65%, #ffeb3b 65%);
+            padding: 5px 15px;
+            transform: rotate(-1deg);
+        }
+
+        .code-input-container {
+            margin-top: 40px;
+        }
+
+        .code-input-container label {
+            display: block;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            color: #333;
+            font-weight: bold;
+        }
+
+        .code-input-container input {
+            width: 300px;
+            padding: 15px;
+            font-size: 1.2em;
+            background: #f5f5f5;
+            border: 2px solid #999;
+            color: #000;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s;
+        }
+
+        .code-input-container input:focus {
+            outline: none;
+            border-color: #ffeb3b;
+            box-shadow: 0 0 10px rgba(255,235,59,0.5);
+        }
+
+        .code-input-container button {
+            margin-top: 20px;
+            padding: 15px 40px;
+            font-size: 1.1em;
+            background: #333;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s;
+            border-radius: 5px;
+        }
+
+        .code-input-container button:hover {
+            background: #000;
+            transform: translateY(-2px);
+        }
+
+        .error-msg {
+            color: #d32f2f;
+            margin-top: 10px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        /* Main Dashboard */
+        .dashboard {
+            display: none;
+            min-height: 100vh;
+            padding: 20px;
+            background: #e8e8e8;
+        }
+
+        .dashboard.active {
+            display: block;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #bdbdbd 0%, #d4d4d4 100%);
+            padding: 20px;
+            border: 2px solid #888;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .header h2 {
+            color: #000;
+            font-size: 2em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Hidden Skip Button (Admin Only) */
+        .skip-audio-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            padding: 5px 10px;
+            background: transparent;
+            border: 1px solid transparent;
+            color: transparent;
+            cursor: pointer;
+            font-size: 0.7em;
+            border-radius: 3px;
+            transition: all 0.3s;
+        }
+
+        .skip-audio-btn:hover {
+            background: rgba(0,0,0,0.1);
+            border-color: #888;
+            color: #666;
+        }
+
+        .user-info {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .online-counter {
+            background: #fff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            border: 2px solid #888;
+            font-weight: bold;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .badge {
+            background: linear-gradient(135deg, #ffeb3b, #ffc107);
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            border: 2px solid #f57f17;
+            box-shadow: 0 2px 10px rgba(255,193,7,0.3);
+        }
+
+        .admin-badge {
+            background: linear-gradient(135deg, #f44336, #d32f2f) !important;
+            color: #fff !important;
+            border-color: #b71c1c !important;
+        }
+
+        .admin-controls {
+            display: none;
+            width: 100%;
+            margin-top: 15px;
+            padding: 20px;
+            background: rgba(255,255,255,0.95);
+            border: 2px solid #888;
+            border-radius: 10px;
+        }
+
+        .admin-controls.active {
+            display: block;
+        }
+
+        .theme-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .theme-controls button {
+            padding: 8px 12px;
+            background: #fff;
+            border: 2px solid #888;
+            color: #000;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.3s;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85em;
+        }
+
+        .theme-controls button:hover {
+            background: #f5f5f5;
+            transform: translateY(-2px);
+        }
+
+        .settings-section {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f5f5f5;
+            border: 2px solid #888;
+            border-radius: 5px;
+        }
+
+        .settings-section h3 {
+            margin-bottom: 10px;
+            color: #000;
+        }
+
+        .setting-item {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .setting-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .setting-item label {
+            cursor: pointer;
+            font-size: 0.95em;
+        }
+
+        .link-generator {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f5f5f5;
+            border: 2px dashed #888;
+            border-radius: 5px;
+        }
+
+        .link-generator h3 {
+            margin-bottom: 10px;
+            color: #000;
+        }
+
+        .link-generator input {
+            width: 100%;
+            padding: 10px;
+            font-size: 1em;
+            background: #fff;
+            border: 2px solid #888;
+            color: #000;
+            font-family: 'Courier New', monospace;
+            margin-bottom: 10px;
+        }
+
+        .link-generator button {
+            padding: 10px 20px;
+            background: #4CAF50;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-right: 10px;
+            font-size: 0.9em;
+        }
+
+        .download-btn {
+            padding: 10px 20px;
+            background: #2196F3;
+            border: none;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        .search-bar {
+            width: 100%;
+            max-width: 600px;
+            padding: 15px;
+            font-size: 1.1em;
+            background: #fff;
+            border: 2px solid #888;
+            color: #000;
+            margin: 0 auto 20px;
+            display: block;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .game-card {
+            background: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid #999;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, #ffeb3b, #ffc107);
+        }
+
+        .game-card:hover {
+            transform: translateY(-5px);
+            border-color: #666;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .game-card h3 {
+            color: #000;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+
+        .file-type-badge {
+            display: inline-block;
+            background: #ffeb3b;
+            color: #000;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        /* 3 Million Files Button */
+        .bottom-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin: 30px auto;
+            flex-wrap: wrap;
+        }
+
+        .more-files-btn, .cloaking-btn {
+            padding: 20px 40px;
+            border: 3px solid;
+            color: #fff;
+            font-size: 1.3em;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+            font-family: 'Courier New', monospace;
+        }
+
+        .more-files-btn {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+            border-color: #c92a2a;
+        }
+
+        .cloaking-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            border-color: #2e7d32;
+        }
+
+        .more-files-btn:hover, .cloaking-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+        }
+
+        /* Police Warning Screen */
+        .police-warning {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            z-index: 3000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .police-warning.active {
+            display: flex;
+        }
+
+        .warning-text {
+            font-size: 3em;
+            color: #fff;
+            text-align: center;
+            font-weight: bold;
+            padding: 40px;
+            animation: blink 0.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        @keyframes policeFlash {
+            0%, 49% { background: #ff0000; }
+            50%, 100% { background: #0000ff; }
+        }
+
+        .police-lights {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            animation: policeFlash 0.5s infinite;
+            opacity: 0.3;
+            z-index: -1;
+        }
+
+        /* Game Player */
+        .game-player {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            z-index: 1000;
+        }
+
+        .game-player.active {
+            display: block;
+        }
+
+        .game-controls {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.95);
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1001;
+            border-bottom: 3px solid #ffeb3b;
+        }
+
+        .game-controls button {
+            padding: 10px 20px;
+            background: #fff;
+            border: none;
+            color: #000;
+            cursor: pointer;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .game-controls button:hover {
+            background: #ffeb3b;
+        }
+
+        .game-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* 67 Celebration */
+        .celebration-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #ffeb3b, #ffc107);
+            padding: 50px;
+            border-radius: 20px;
+            z-index: 2000;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            animation: popupBounce 0.5s ease-out;
+            display: none;
+            border: 5px solid #f57f17;
+        }
+
+        @keyframes popupBounce {
+            0% { transform: translate(-50%, -50%) scale(0) rotate(-180deg); }
+            50% { transform: translate(-50%, -50%) scale(1.2) rotate(10deg); }
+            100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+        }
+
+        .celebration-popup.active {
+            display: block;
+        }
+
+        .celebration-popup h2 {
+            font-size: 3em;
+            color: #000;
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.5);
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .celebration-popup button {
+            padding: 15px 30px;
+            background: #000;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2em;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+        <div class="file-folder">
+            <h1><span class="marker-text">The Kamstein Files</span></h1>
+            <p style="margin-top: 10px; color: #666;">🗂️ CLASSIFIED DOCUMENTS 🗂️</p>
+            <div class="code-input-container">
+                <label for="codeInput">📋 ENTER ACCESS CODE:</label>
+                <input type="password" id="codeInput" placeholder="* * * *">
+                <br>
+                <button onclick="checkCode()">🔓 ACCESS FILES</button>
+                <div class="error-msg" id="errorMsg"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div class="dashboard" id="dashboard">
+        <div class="header">
+            <button class="skip-audio-btn" id="skipAudioBtn" onclick="skipRandomAudio()">⏭ Skip</button>
+            <h2><span class="file-icon">📂</span> The Kamstein Files Archive</h2>
+            <div class="user-info">
+                <div class="online-counter">
+                    👥 Online: <span id="onlineCount">1</span>
+                </div>
+                <div class="badge" id="userBadge"></div>
+            </div>
+
+            <div class="admin-controls" id="adminControls">
+                <h3 style="margin-bottom: 15px;">⚙️ ADMIN CONTROL PANEL</h3>
+
+                <div style="margin-bottom: 15px;">
+                    <strong>🎨 FILE CABINET THEMES (20 Themes!):</strong>
+                </div>
+                <div class="theme-controls">
+                    <button onclick="changeTheme('manila')">📁 Manila</button>
+                    <button onclick="changeTheme('blue')">📘 Blue</button>
+                    <button onclick="changeTheme('green')">📗 Green</button>
+                    <button onclick="changeTheme('red')">📕 Red</button>
+                    <button onclick="changeTheme('purple')">📙 Purple</button>
+                    <button onclick="changeTheme('orange')">📒 Orange</button>
+                    <button onclick="changeTheme('pink')">💗 Pink</button>
+                    <button onclick="changeTheme('dark')">📓 Dark</button>
+                    <button onclick="changeTheme('wood')">🪵 Wood</button>
+                    <button onclick="changeTheme('metal')">🔩 Metal</button>
+                    <button onclick="changeTheme('neon')">⚡ Neon</button>
+                    <button onclick="changeTheme('sunset')">🌅 Sunset</button>
+                    <button onclick="changeTheme('ocean')">🌊 Ocean</button>
+                    <button onclick="changeTheme('forest')">🌲 Forest</button>
+                    <button onclick="changeTheme('lavender')">💜 Lavender</button>
+                    <button onclick="changeTheme('mint')">🍃 Mint</button>
+                    <button onclick="changeTheme('rose')">🌹 Rose</button>
+                    <button onclick="changeTheme('gold')">✨ Gold</button>
+                    <button onclick="changeTheme('midnight')">🌙 Midnight</button>
+                    <button onclick="changeTheme('fire')">🔥 Fire</button>
+                </div>
+
+                <div class="settings-section">
+                    <h3>⚙️ SETTINGS</h3>
+                    <div class="setting-item">
+                        <input type="checkbox" id="autoAboutBlank" onchange="toggleAutoAboutBlank()">
+                        <label for="autoAboutBlank">Auto About:Blank (Open all games in disguised tab)</label>
+                    </div>
+                    <div class="setting-item">
+                        <input type="checkbox" id="tabDisguise" onchange="toggleTabDisguise()" checked>
+                        <label for="tabDisguise">Tab Disguiser (Hide as Google when switching tabs)</label>
+                    </div>
+                </div>
+
+                <div class="link-generator">
+                    <h3>🔗 LINK GENERATOR</h3>
+                    <p style="margin-bottom: 10px; color: #666;">Generate shareable copies</p>
+                    <input type="text" id="generatedLink" readonly value="" placeholder="Click Generate">
+                    <br>
+                    <button onclick="generateLink()">🔄 Generate</button>
+                    <button onclick="copyLink()">📋 Copy</button>
+                    <button class="download-btn" onclick="downloadHTML()">💾 Download</button>
+                </div>
+            </div>
+        </div>
+
+        <input type="text" class="search-bar" id="searchBar" placeholder="🔍 Search classified files..." onkeyup="searchGames()">
+
+        <div class="games-grid" id="gamesGrid"></div>
+
+        <div class="bottom-controls">
+            <button class="more-files-btn" onclick="requestMoreFiles()">
+                🗃️ Want to see 3 MILLION more files? 🗃️
+            </button>
+            <button class="cloaking-btn" onclick="activateCloaking()">
+                🔒 Open in About:Blank
+            </button>
+        </div>
+    </div>
+
+    <!-- Game Player -->
+    <div class="game-player" id="gamePlayer">
+        <div class="game-controls" id="gameControls">
+            <button onclick="closeGame()">✖ Close</button>
+            <span id="currentGame" style="color: #fff; font-size: 1.2em;"></span>
+            <button onclick="toggleFullscreen()">⛶ Fullscreen</button>
+        </div>
+        <iframe class="game-iframe" id="gameIframe"></iframe>
+    </div>
+
+    <!-- Police Warning Screen -->
+    <div class="police-warning" id="policeWarning">
+        <div class="police-lights"></div>
+        <div class="warning-text" id="warningText"></div>
+    </div>
+
+    <!-- 67 Celebration -->
+    <div class="celebration-popup" id="celebrationPopup">
+        <h2 id="celebrationMessage"></h2>
+        <button onclick="skipCelebration()">SKIP</button>
+    </div>
+
+    <!-- Audio -->
+    <audio id="celebrationAudio"></audio>
+    <audio id="policeAudio"></audio>
+    <audio id="randomAudio"></audio>
+
+    <script>
+        const games = [
+            {name: "1v1.LoL", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/c8a3f243-5233-4a49-8e31-46341974520d-1v1.LoL.html"},
+            {name: "Amaze", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/cf3e78c2-2ff4-4c6b-92e7-b786e3f31266-Amaze.html"},
+            {name: "Angry Birds", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/8a063859-f2f8-4b5b-bc74-5f71be718450-Angry_Birds.html"},
+            {name: "Backrooms", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/7ee5f778-1cd5-4bf9-8705-17783fa5d97f-Backrooms.html"},
+            {name: "Bad Parenting", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/809b19e8-779c-4ae5-a314-fa886783c73e-Bad_Parenting_1.html"},
+            {name: "Baldi's Basics Plus", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/1089c5db-450f-45cd-bc2d-46c724086473-Baldi_s_Basics_Plus.html"},
+            {name: "Bank Robbery", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/d15cf559-46f7-4bce-a636-dbd83feac7ec-Bank_Robbery.html"},
+            {name: "Bank Robbery 2", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/2f1d0aab-e15f-455d-bda1-6edb6c29556a-Bank_Robbery_2.html"},
+            {name: "Bank Robbery 3", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/2cc027ea-921a-4113-89a2-89caed6913c3-Bank_Robbery_3.html"},
+            {name: "Basket Random", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/ed8247b0-30ac-4414-b43d-a3504a42e829-Basket_Random.html"},
+            {name: "Bendy and the Ink Machine", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/393a6820-22f4-41c4-9601-c33ada00182c-Bendy_and_the_Ink_Machine.html"},
+            {name: "BitLife", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/664842db-7b75-4fd0-848a-7b638d944dd6-BitLife.html"},
+            {name: "Block Blast", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/617fb985-f623-483f-893e-279b239bc859-Block_Blast.html"},
+            {name: "Blocky Snakes", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/fb43f855-f853-4d75-af7e-99f78802b8b9-Blocky_Snakes.html"},
+            {name: "Bottle Jump 3D", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/b5f50d2f-600e-491a-b6c5-10326e7dfe0e-Bottle_Jump_3D.html"},
+            {name: "Boxing Random", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/7ea9c531-16c3-4dfb-85c3-61afe290b020-Boxing_Random.html"},
+            {name: "Bridge Race", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/d0b11e01-78fc-4508-9255-29ca9dcfdcee-Bridge_Race.html"},
+            {name: "Buckshot Roulette", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/58763cce-1f1a-4182-b641-4b38994c3f6f-Buckshot_Roulette.html"},
+            {name: "Buckshot Roulette (Alt)", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/66e62e7c-d5a2-446f-bcb1-6cf04b80b638-Buckshot_Roulette__1_.html"},
+            {name: "Build a Big Army", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/7019e6f2-0e62-4a70-8e6c-f37a68aff91b-Build_a_Big_Army.html"},
+            {name: "Bust a Loop", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/8edde766-8d43-4a95-a088-8a42e9b4d909-Bust_a_Loop.html"},
+            {name: "Celeste", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/54cda239-1f03-4de0-8a21-26186bdad464-Celeste.html"},
+            {name: "Color Water Sort 3D", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/bf6adde3-502a-409f-a90e-c14260a5e645-Color_Water_Sort_3D.html"},
+            {name: "Draw the Line", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/cf1033da-b901-4263-af3e-1baa41d9762a-Draw_the_Line.html"},
+            {name: "Driven Wild", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/78d2479f-84e7-4213-b010-39bcc29863a6-Driven_Wild.html"},
+            {name: "Elastic Man", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/ad4cebdd-2ace-4aa1-99c3-387bc08a83b3-Elastic_Man.html"},
+            {name: "Escape Road", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/b56e923b-9045-4030-a691-f4cd95b44369-Escape_Road.html"},
+            {name: "Five Nights at Candy's", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/42d79618-ec4b-4a64-809c-34720b5a8247-Five_Nights_at_Candy_s.html"},
+            {name: "Five Nights at Candy's 2", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/aded94f0-0f9c-4fbc-b39f-6f2a25d2fddf-Five_Nights_at_Candy_s_2.html"},
+            {name: "Five Nights at Freddy's", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/d6a9a92b-bb2f-4caa-a7f2-7950b4d044d7-Five_Nights_at_Freddy_s.html"},
+            {name: "Five Nights at Freddy's 2", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/99a8ef51-337e-453e-bdb9-0711f81bafb3-Five_Nights_at_Freddy_s_2.html"},
+            {name: "Five Nights at Freddy's 3", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/5f16b384-982b-47b0-9b94-8dd6f1377930-Five_Nights_at_Freddy_s_3.html"},
+            {name: "Five Nights at Freddy's 4", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/7ef5a779-1f60-47fb-b0cb-531c2a916c0c-Five_Nights_at_Freddy_s_4.html"},
+            {name: "FNAF: Sister Location", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/de5fb8ce-8571-40ea-92ac-bc8dc8e09540-Five_Nights_at_Freddy_s__Sister_Location.html"},
+            {name: "Five Nights at Winston's", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/c096f183-a070-4f0c-ba71-9ffb6567efe2-Five_Nights_at_Winston_s.html"},
+            {name: "Friday Night Funkin' vs Garcello", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/7e6154ff-cb82-43de-a925-ec0a083aab92-Friday_Night_Funkin___vs._Garcello.html"},
+            {name: "FNF VS Impostor Alternated", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/af63a00b-1998-49b5-83c5-292af05275db-Friday_Night_Funkin___VS._Impostor__Alternated.html"},
+            {name: "Geometry Dash Lite", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/c1873746-0cb6-419f-83eb-ddf223333787-Geometry_Dash_Lite__REMAKE_.html"},
+            {name: "Get Yoked", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/845cf6b7-fda0-42f9-abaf-7b5ce97e7acd-Get_Yoked.html"},
+            {name: "Getting Over It", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/ca35bad9-d157-480e-b1a9-976e11dd2435-Getting_Over_It_with_Bennett_Foddy.html"},
+            {name: "Granny 2", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/7e524e72-1a93-4087-9684-553e24baf170-Granny_2.html"},
+            {name: "Happy Wheels", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/c229d926-fe6f-4a9e-ad70-b797822b3fb3-Happy_Wheels.html"},
+            {name: "Hollow Knight", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/8c1796f0-e0bd-4f5c-a76f-7c0ab1b93675-Hollow_Knight.html"},
+            {name: "Hotline Miami", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/979cb12e-902b-41e1-8fa5-a86da388e422-Hotline_Miami.html"},
+            {name: "Jelly Drift", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/2c5d3644-7875-4099-899f-5e15ffcc4339-Jelly_Drift.html"},
+            {name: "Kaji Run", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/ee20f0bf-3212-4090-90e6-e58965b8a811-Kaji_Run.html"},
+            {name: "Meatboy", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/4c054e1b-fb12-45be-aabc-ef88afaeae0b-Meatboy.html"},
+            {name: "Monster Tracks", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/9cc7e25d-b692-474d-b107-f77c133a097b-Monster_Tracks.html"},
+            {name: "Moto X3M Spooky", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/7c34039b-ee4b-4d65-8d01-e0c94561b971-Moto_X3M_Spooky.html"},
+            {name: "Mutilate a Doll 2", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/9ef4e40c-449f-4348-9ff6-c2e01b35b62d-Mutilate_a_Doll_2.html"},
+            {name: "Orange Roulette", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/bb3490bc-37bd-4e71-8e02-6a09f4777e79-Orange_Roulette.html"},
+            {name: "Pac-Man World", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/a49e7095-519b-4b9b-94f8-736ee21cd5ea-Pac_Man_World.html"},
+            {name: "Papa's Hot Doggeria", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/ae8eac06-e5da-4668-8d3b-22b319c3a70c-Papa_s_Hot_Doggeria.html"},
+            {name: "Papa's Scooperia", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/610c2376-69aa-45e0-a823-cb11a636f9b0-Papa_s_Scooperia.html"},
+            {name: "Papa's Wingeria", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/0fb14ec9-c154-49fd-8088-3288965baf3e-Papa_s_Wingeria.html"},
+            {name: "Pizza Tower", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/a5b5828c-df74-4df2-8599-ecf1303aaf9c-Pizza_Tower.html"},
+            {name: "R.E.P.O", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/13fa8ae8-6b50-4514-ba1e-a7cc6ec287a2-R.E.P.O.html"},
+            {name: "Raldi's Crackhouse", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/b2d45635-fcea-4400-b3a0-6935c556115e-Raldi_s_Crackhouse.html"},
+            {name: "Retro Bowl College", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/a14fd5be-e838-44bd-bd2b-afba14324503-Retro_Bowl_College.html"},
+            {name: "Side Effects", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/e8c191ab-5ba4-4b47-9734-a9dead58ee31-Side_Effects.html"},
+            {name: "Slender: The 8 Pages", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/a4aafe72-1266-421f-9263-d1687e79a4c8-Slender__The_8_Pages.html"},
+            {name: "Slime Rancher", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/d89c399f-2782-455d-8531-f73169b2d0fd-Slime_Rancher.html"},
+            {name: "Slither.io", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/eaabe82b-9dbe-4b40-bcbf-ebc40b887324-Slither.io.html"},
+            {name: "Slope 2", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/53231d7c-5504-4dfb-967c-4e47d889a61b-Slope_2.html"},
+            {name: "Snow Rider 3D", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/00d090cd-08af-4506-addd-e0a9dcb5f813-Snow_Rider_3D.html"},
+            {name: "Sonic.EXE", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/44fd2d0e-2fd7-4f64-8100-92c3f4851e79-Sonic.EXE.html"},
+            {name: "Soundboard", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/80f2b469-d4b9-4867-ad39-5b61840fa979-Soundboard.html"},
+            {name: "Stick War: Legacy", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/ce274339-c9c6-4120-859d-d618be89e6b7-Stick_War__Legacy.html"},
+            {name: "Stickman Fight Ragdoll", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/7a7e3638-cccd-42b7-be6b-1fa943a28f76-Stickman_Fight_Ragdoll.html"},
+            {name: "Supreme Duelist", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/1f4d5ebd-3c48-4e63-bad5-eaf4ab4710dc-Supreme_Duelist.html"},
+            {name: "Tattletail", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/018d34d1-e0d5-4ae3-bf7d-395dd0bab909-Tattletail.html"},
+            {name: "Teen Titans GO: Jump Jousts 2", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/4c622264-b6a5-43cc-b976-4d0c9d0e0a9c-Teen_Titans_GO___Jump_Jousts_2.html"},
+            {name: "Temple Run 2", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/c42ce530-70c0-45f7-884d-01beb3906763-Temple_Run_2.html"},
+            {name: "That's Not My Neighbor", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/86492130-ef5d-430f-924c-de047c65b710-That_s_Not_My_Neighbor.html"},
+            {name: "The Man In The Window", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/d7c614fb-4f07-4b5a-9e3c-565a813b65ca-The_Man_In_The_Window.html"},
+            {name: "Tube Jumpers", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/85e02c45-d3ec-47b5-8b65-e11bbf7eb1a6-Tube_Jumpers.html"},
+            {name: "Twerk Race 3D", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/0174c38b-389c-4651-9ff8-d22d9d5b2c56-Twerk_Race_3D.html"},
+            {name: "Twisted Rope 3D", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/445543cc-f0f6-43b2-a549-d0918f319d9c-Twisted_Rope_3D.html"},
+            {name: "WebFishing", url: "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/14b50eca-6c20-4e23-a09d-523acb8d1e0a-WebFishing.html"},
+            {name: "More Files Coming Soon...", url: "coming-soon", comingSoon: true}
+        ];
+
+        const celebrationAudios = [
+            "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/6-7-full.mp3",
+            "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/67-kid.mp3",
+            "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/67-brain-fart.mp3",
+            "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/67_SQlv2Xv.mp3"
+        ];
+
+        const policeWarningMessages = [
+            "🚨 YOU REALLY THOUGHT THIS WAS OTHER GAMES? 🚨",
+            "🚔 GET OUT! GET OUT! GET OUT! 🚔",
+            "⚠️ ACCESS DENIED! POLICE ALERT! ⚠️",
+            "🚨 UNAUTHORIZED ACCESS DETECTED! 🚨",
+            "🚔 ALERT! ALERT! BREACH DETECTED! 🚔",
+            "⚠️ SYSTEM COMPROMISED! EVACUATE! ⚠️"
+        ];
+
+        const warningAudio = "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/87c0f50d-d25e-46eb-aad2-7e98423aa75e-error_CDOxCYm.mp3";
+        const dexterMeme = "https://creao-copilot-production.s3.us-west-2.amazonaws.com/uploads/a8c1f330-9001-7006-ad0f-2d8713e5b892/625a7161-c115-4f19-a6fe-645b142336c2-dexter-meme.mp3";
+
+        let isAdmin = false;
+        let celebrationShown = false;
+        let autoAboutBlank = false;
+        let tabDisguiseEnabled = true;
+        let originalTitle = "The Kamstein Files";
+        let originalFavicon = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📁</text></svg>";
+        let randomAudioInterval;
+        let currentRandomAudio;
+
+        // Tab Disguiser
+        document.addEventListener('visibilitychange', function() {
+            if (tabDisguiseEnabled) {
+                if (document.hidden) {
+                    document.title = 'Google';
+                    document.getElementById('favicon').href = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAAb1BMVEX///9ChfTqQzX7vAU0qFM7tv+AgID/vAXFpSMml/XW1tYSokj8wQU3sFCmpiL7vQVJhvSAgIAAAACmpqb9vQU7gPT/wAVJhvP7vQVJhfP//v88gPRJhvRJhfP/vgVJhfT8vQWAgID9vQWAgIDqSUH8AAAAJHRSTlMABQkNEhYaHyQpLjM3Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7OztIdS9aAAAA9klEQVR4Aa3PNZLDQBCFYWZm5v0PyYb3P+MGKr+q3kU1p/6KaBnNZrPZbDab/QnRdV3XdV3XdV3XfwRhGIZhGIZhGIb/CaqqqqqqqqqqKv4TVBRFURRFURRFxf+AqqpqWZZlWZZl+Z9QVVUty7Isy7L8T1BVVcuyLMuyLP8TFEVRFEVRFEXxP0FRFEVRFEVRFMVfgaqqqqqqqqqqKv4KVFVVVVVVVVVVXEBd13Vd13Vd1/UBiqIoiqIoiqIo+gB1Xdd1Xdd1Xdd1AYqiKIqiKIqiKO+CpmmapmmapmkGLRRF0TRN0zRN8y5omqZpmqZpmqYZtFAURdM0TdM0zbtgNpvNZrPZbDb7A16N+gF78d7WAAAAAElFTkSuQmCC';
+                } else {
+                    document.title = originalTitle;
+                    document.getElementById('favicon').href = originalFavicon;
+                }
+            }
+        });
+
+        // Random Audio Player (5% chance every 30 seconds for non-admin)
+        function startRandomAudio() {
+            if (!isAdmin) {
+                randomAudioInterval = setInterval(() => {
+                    if (Math.random() < 0.05) {
+                        playRandomAudio();
+                    }
+                }, 30000);
+            }
+        }
+
+        function playRandomAudio() {
+            const audio = document.getElementById('randomAudio');
+            audio.src = dexterMeme;
+            audio.play();
+            currentRandomAudio = audio;
+            document.getElementById('skipAudioBtn').style.visibility = 'visible';
+        }
+
+        function skipRandomAudio() {
+            if (currentRandomAudio) {
+                currentRandomAudio.pause();
+                currentRandomAudio.currentTime = 0;
+                document.getElementById('skipAudioBtn').style.visibility = 'hidden';
+            }
+        }
+
+        // Check access code
+        function checkCode() {
+            const code = document.getElementById('codeInput').value;
+            const errorMsg = document.getElementById('errorMsg');
+
+            if (code === '6789') {
+                isAdmin = false;
+                document.getElementById('userBadge').textContent = '👤 USER';
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('dashboard').classList.add('active');
+                loadGames();
+                startOnlineCounter();
+                startRandomAudio();
+            } else if (code === 'ripfrick') {
+                isAdmin = true;
+                document.getElementById('userBadge').textContent = '⭐ ADMIN';
+                document.getElementById('userBadge').classList.add('admin-badge');
+                document.getElementById('adminControls').classList.add('active');
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('dashboard').classList.add('active');
+                document.getElementById('skipAudioBtn').style.visibility = 'visible';
+                loadGames();
+                startOnlineCounter();
+            } else {
+                errorMsg.textContent = '❌ INVALID ACCESS CODE';
+                document.getElementById('codeInput').value = '';
+                setTimeout(() => errorMsg.textContent = '', 2000);
+            }
+        }
+
+        // Load games
+        function loadGames() {
+            const grid = document.getElementById('gamesGrid');
+            grid.innerHTML = '';
+
+            games.forEach(game => {
+                const card = document.createElement('div');
+                card.className = 'game-card';
+
+                if (game.comingSoon) {
+                    card.innerHTML = `
+                        <h3>⏳ ${game.name}</h3>
+                        <p style="color: #ff6b6b; font-weight: bold;">COMING SOON</p>
+                        <span class="file-type-badge" style="background: #ff6b6b; color: #fff;">LOCKED</span>
+                    `;
+                    card.style.opacity = '0.7';
+                    card.style.cursor = 'default';
+                } else {
+                    card.innerHTML = `
+                        <h3>📄 ${game.name}</h3>
+                        <p>Click to open classified file</p>
+                        <span class="file-type-badge">.HTML</span>
+                    `;
+                    card.onclick = () => openGame(game);
+                }
+
+                grid.appendChild(card);
+            });
+        }
+
+        // Search
+        function searchGames() {
+            const search = document.getElementById('searchBar').value.toLowerCase();
+            const grid = document.getElementById('gamesGrid');
+            grid.innerHTML = '';
+
+            const filtered = games.filter(game => game.name.toLowerCase().includes(search));
+
+            filtered.forEach(game => {
+                const card = document.createElement('div');
+                card.className = 'game-card';
+
+                if (game.comingSoon) {
+                    card.innerHTML = `
+                        <h3>⏳ ${game.name}</h3>
+                        <p style="color: #ff6b6b; font-weight: bold;">COMING SOON</p>
+                        <span class="file-type-badge" style="background: #ff6b6b; color: #fff;">LOCKED</span>
+                    `;
+                    card.style.opacity = '0.7';
+                    card.style.cursor = 'default';
+                } else {
+                    card.innerHTML = `
+                        <h3>📄 ${game.name}</h3>
+                        <p>Click to open classified file</p>
+                        <span class="file-type-badge">.HTML</span>
+                    `;
+                    card.onclick = () => openGame(game);
+                }
+
+                grid.appendChild(card);
+            });
+        }
+
+        // Open game
+        function openGame(game) {
+            if (autoAboutBlank) {
+                openInAboutBlank(game.url);
+            } else {
+                const player = document.getElementById('gamePlayer');
+                const iframe = document.getElementById('gameIframe');
+
+                player.classList.add('active');
+                document.getElementById('currentGame').textContent = '📄 ' + game.name;
+                iframe.src = game.url;
+            }
+        }
+
+        function openInAboutBlank(url) {
+            const aboutBlankWindow = window.open('about:blank', '_blank');
+
+            if (aboutBlankWindow) {
+                aboutBlankWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Google</title>
+                        <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAAb1BMVEX///9ChfTqQzX7vAU0qFM7tv+AgID/vAXFpSMml/XW1tYSokj8wQU3sFCmpiL7vQVJhvSAgIAAAACmpqb9vQU7gPT/wAVJhvP7vQVJhfP//v88gPRJhvRJhfP/vgVJhfT8vQWAgID9vQWAgIDqSUH8AAAAJHRSTlMABQkNEhYaHyQpLjM3Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7OztIdS9aAAAA9klEQVR4Aa3PNZLDQBCFYWZm5v0PyYb3P+MGKr+q3kU1p/6KaBnNZrPZbDab/QnRdV3XdV3XdV3XfwRhGIZhGIZhGIb/CaqqqqqqqqqqKv4TVBRFURRFURRFxf+AqqpqWZZlWZZl+Z9QVVUty7Isy7L8T1BVVcuyLMuyLP8TFEVRFEVRFEXxP0FRFEVRFEVRFMVfgaqqqqqqqqqqKv4KVFVVVVVVVVVVXEBd13Vd13Vd1/UBiqIoiqIoiqIo+gB1Xdd1Xdd1Xdd1AYqiKIqiKIqiKO+CpmmapmmapmkGLRRF0TRN0zRN8y5omqZpmqZpmqYZtFAURdM0TdM0zbtgNpvNZrPZbDb7A16N+gF78d7WAAAAAElFTkSuQmCC">
+                        <style>
+                            body, html { margin: 0; padding: 0; overflow: hidden; background: #fff; }
+                            iframe { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; border: none; }
+                        </style>
+                    </head>
+                    <body>
+                        <iframe src="${url}"></iframe>
+                    </body>
+                    </html>
+                `);
+                aboutBlankWindow.document.close();
+            }
+        }
+
+        function closeGame() {
+            document.getElementById('gamePlayer').classList.remove('active');
+            document.getElementById('gameIframe').src = '';
+        }
+
+        function toggleFullscreen() {
+            const player = document.getElementById('gamePlayer');
+            if (!document.fullscreenElement) {
+                player.requestFullscreen();
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Online counter
+        function startOnlineCounter() {
+            let count = Math.floor(Math.random() * 30) + 1;
+            const counter = document.getElementById('onlineCount');
+
+            setInterval(() => {
+                const change = Math.random() > 0.5 ? 1 : -1;
+                count = Math.max(1, Math.min(70, count + change));
+                counter.textContent = count;
+
+                if (count === 67 && !celebrationShown) {
+                    celebrationShown = true;
+                    triggerCelebration();
+                }
+
+                if (count !== 67) {
+                    celebrationShown = false;
+                }
+            }, Math.random() * 10000 + 10000);
+        }
+
+        // 67 Celebration
+        let currentCelebrationIndex = 0;
+        function triggerCelebration() {
+            currentCelebrationIndex = 0;
+            showNextCelebration();
+        }
+
+        function showNextCelebration() {
+            if (currentCelebrationIndex >= 7) return;
+
+            const popup = document.getElementById('celebrationPopup');
+            const messages = [
+                "🎉 67 ONLINE! INCREDIBLE! 🎉",
+                "🔥 67 USERS CONNECTED! 🔥",
+                "⭐ LEGENDARY 67 MILESTONE! ⭐",
+                "💯 67 STRONG! AMAZING! 💯",
+                "🚀 67 USERS! TO THE MOON! 🚀",
+                "🎊 67 ONLINE! PARTY TIME! 🎊",
+                "👑 67 USERS! ROYAL STATUS! 👑"
+            ];
+
+            document.getElementById('celebrationMessage').textContent = messages[currentCelebrationIndex];
+            popup.classList.add('active');
+
+            const audioIndex = Math.floor(Math.random() * celebrationAudios.length);
+            const audio = document.getElementById('celebrationAudio');
+            audio.src = celebrationAudios[audioIndex];
+            audio.play();
+
+            setTimeout(() => {
+                popup.classList.remove('active');
+                audio.pause();
+                currentCelebrationIndex++;
+
+                if (currentCelebrationIndex < 7) {
+                    setTimeout(showNextCelebration, 500);
+                }
+            }, 7000);
+        }
+
+        function skipCelebration() {
+            document.getElementById('celebrationPopup').classList.remove('active');
+            document.getElementById('celebrationAudio').pause();
+            currentCelebrationIndex = 7;
+        }
+
+        // 3 Million Files
+        function requestMoreFiles() {
+            const code = prompt("🔒 Enter code to access 3 MILLION more files:");
+
+            if (code === 'diddy') {
+                showPoliceWarning();
+            } else if (code) {
+                alert('❌ Invalid code! Access denied.');
+            }
+        }
+
+        let warningIndex = 0;
+        function showPoliceWarning() {
+            const warning = document.getElementById('policeWarning');
+            const text = document.getElementById('warningText');
+            const audio = document.getElementById('policeAudio');
+
+            warning.classList.add('active');
+            audio.src = warningAudio;
+            audio.loop = true;
+            audio.play();
+
+            const warningInterval = setInterval(() => {
+                text.textContent = policeWarningMessages[warningIndex % policeWarningMessages.length];
+                warningIndex++;
+            }, 500);
+
+            setTimeout(() => {
+                clearInterval(warningInterval);
+                warning.classList.remove('active');
+                audio.pause();
+                audio.loop = false;
+                warningIndex = 0;
+            }, 10000);
+        }
+
+        // Themes (20 total!)
+        function changeTheme(theme) {
+            const body = document.body;
+            const header = document.querySelector('.header');
+
+            const themes = {
+                manila: { bg: '#e8e8e8', header: 'linear-gradient(135deg, #bdbdbd 0%, #d4d4d4 100%)' },
+                blue: { bg: '#d0e8f2', header: 'linear-gradient(135deg, #64b5f6 0%, #90caf9 100%)' },
+                green: { bg: '#d4edda', header: 'linear-gradient(135deg, #81c784 0%, #a5d6a7 100%)' },
+                red: { bg: '#f8d7da', header: 'linear-gradient(135deg, #e57373 0%, #ef9a9a 100%)' },
+                purple: { bg: '#e1bee7', header: 'linear-gradient(135deg, #ba68c8 0%, #ce93d8 100%)' },
+                orange: { bg: '#ffe0b2', header: 'linear-gradient(135deg, #ffb74d 0%, #ffcc80 100%)' },
+                pink: { bg: '#f8bbd0', header: 'linear-gradient(135deg, #f06292 0%, #f48fb1 100%)' },
+                dark: { bg: '#2d2d2d', header: 'linear-gradient(135deg, #424242 0%, #616161 100%)' },
+                wood: { bg: '#d7ccc8', header: 'linear-gradient(135deg, #8d6e63 0%, #a1887f 100%)' },
+                metal: { bg: '#b0bec5', header: 'linear-gradient(135deg, #78909c 0%, #90a4ae 100%)' },
+                neon: { bg: '#1a1a2e', header: 'linear-gradient(135deg, #ff00ff 0%, #00ffff 100%)' },
+                sunset: { bg: '#fff3e0', header: 'linear-gradient(135deg, #ff6f00 0%, #ff9800 100%)' },
+                ocean: { bg: '#e0f7fa', header: 'linear-gradient(135deg, #00bcd4 0%, #26c6da 100%)' },
+                forest: { bg: '#e8f5e9', header: 'linear-gradient(135deg, #43a047 0%, #66bb6a 100%)' },
+                lavender: { bg: '#f3e5f5', header: 'linear-gradient(135deg, #ab47bc 0%, #ba68c8 100%)' },
+                mint: { bg: '#e0f2f1', header: 'linear-gradient(135deg, #26a69a 0%, #4db6ac 100%)' },
+                rose: { bg: '#fce4ec', header: 'linear-gradient(135deg, #ec407a 0%, #f06292 100%)' },
+                gold: { bg: '#fff8e1', header: 'linear-gradient(135deg, #ffd700 0%, #ffeb3b 100%)' },
+                midnight: { bg: '#263238', header: 'linear-gradient(135deg, #37474f 0%, #546e7a 100%)' },
+                fire: { bg: '#ffebee', header: 'linear-gradient(135deg, #ff5722 0%, #ff7043 100%)' }
+            };
+
+            if (themes[theme]) {
+                body.style.background = themes[theme].bg;
+                header.style.background = themes[theme].header;
+            }
+        }
+
+        function toggleAutoAboutBlank() {
+            autoAboutBlank = document.getElementById('autoAboutBlank').checked;
+        }
+
+        function toggleTabDisguise() {
+            tabDisguiseEnabled = document.getElementById('tabDisguise').checked;
+        }
+
+        function generateLink() {
+            const linkInput = document.getElementById('generatedLink');
+            const timestamp = Date.now();
+            const randomId = Math.random().toString(36).substring(2, 9);
+            linkInput.value = window.location.href + '?share=' + timestamp + randomId;
+        }
+
+        function copyLink() {
+            const linkInput = document.getElementById('generatedLink');
+            if (linkInput.value) {
+                linkInput.select();
+                document.execCommand('copy');
+                alert('✅ Link copied!');
+            } else {
+                alert('⚠️ Generate a link first!');
+            }
+        }
+
+        function downloadHTML() {
+            if (!isAdmin) {
+                alert('⛔ ADMIN ACCESS REQUIRED');
+                return;
+            }
+
+            const htmlContent = document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'kamstein-files.html';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function activateCloaking() {
+            const aboutBlankWindow = window.open('about:blank', '_blank');
+
+            if (aboutBlankWindow) {
+                const currentURL = window.location.href;
+
+                aboutBlankWindow.document.write(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Google</title>
+                        <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAAb1BMVEX///9ChfTqQzX7vAU0qFM7tv+AgID/vAXFpSMml/XW1tYSokj8wQU3sFCmpiL7vQVJhvSAgIAAAACmpqb9vQU7gPT/wAVJhvP7vQVJhfP//v88gPRJhvRJhfP/vgVJhfT8vQWAgID9vQWAgIDqSUH8AAAAJHRSTlMABQkNEhYaHyQpLjM3Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7OztIdS9aAAAA9klEQVR4Aa3PNZLDQBCFYWZm5v0PyYb3P+MGKr+q3kU1p/6KaBnNZrPZbDab/QnRdV3XdV3XdV3XfwRhGIZhGIZhGIb/CaqqqqqqqqqqKv4TVBRFURRFURRFxf+AqqpqWZZlWZZl+Z9QVVUty7Isy7L8T1BVVcuyLMuyLP8TFEVRFEVRFEXxP0FRFEVRFEVRFMVfgaqqqqqqqqqqKv4KVFVVVVVVVVVVXEBd13Vd13Vd1/UBiqIoiqIoiqIo+gB1Xdd1Xdd1Xdd1AYqiKIqiKIqiKO+CpmmapmmapmkGLRRF0TRN0zRN8y5omqZpmqZpmqYZtFAURdM0TdM0zbtgNpvNZrPZbDb7A16N+gF78d7WAAAAAElFTkSuQmCC">
+                        <style>
+                            body, html { margin: 0; padding: 0; overflow: hidden; background: #fff; }
+                            iframe { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; border: none; }
+                        </style>
+                    </head>
+                    <body>
+                        <iframe src="${currentURL}"></iframe>
+                    </body>
+                    </html>
+                `);
+                aboutBlankWindow.document.close();
+            } else {
+                alert('Pop-up blocked! Please allow pop-ups.');
+            }
+        }
+
+        document.getElementById('codeInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkCode();
+            }
+        });
+    </script>
+</body>
+</html>
